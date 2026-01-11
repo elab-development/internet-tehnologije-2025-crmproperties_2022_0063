@@ -1,69 +1,71 @@
 generator client {
-  provider = "prisma-client-js"
+  provider = "prisma-client-js" // Prisma Client generator - generise JS/TS klijenta za rad sa bazom.
 }
 
 datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
+  provider = "postgresql" // Koristimo PostgreSQL kao bazu.
+  url      = env("DATABASE_URL") // Konekcioni string se cita iz .env fajla (DATABASE_URL).
 }
 
 model User {
-  id       Int @id @default(autoincrement())
-  name     String
-  email    String @unique
-  password String
-  phone    String?
-  role     String?
+  id       Int @id @default(autoincrement()) // Primarni kljuc - automatski se povecava.
+  name     String // Ime i prezime korisnika.
+  email    String @unique // Email mora biti jedinstven u sistemu (koristi se za login).
+  password String // Hesirana lozinka (ne cuvamo plain tekst lozinke).
+  phone    String? // Telefon je opcioni podatak.
+  role     String? // Uloga korisnika: "seller", "manager", "admin" (string radi jednostavnosti).
 
-  deals Deal[]
+  deals Deal[] // 1:N veza - jedan korisnik moze imati vise dealova (prodavac vodi vise poslova).
 }
 
 model Client {
-  id    Int @id @default(autoincrement())
-  name  String
-  email String? @unique
-  phone String?
-  city  String?
+  id    Int @id @default(autoincrement()) // Primarni kljuc - automatski se povecava.
+  name  String // Ime i prezime klijenta (kupca).
+  email String? @unique // Email je opcioni, ali ako postoji mora biti jedinstven.
+  phone String? // Telefon klijenta (opciono).
+  city  String? // Grad u kome se klijent nalazi (opciono).
 
-  deals Deal[]
+  deals Deal[] // 1:N veza - jedan klijent moze ucestvovati u vise dealova kroz vreme.
 }
 
 model Property {
-  id       Int @id @default(autoincrement())
-  title    String
-  address  String?
-  city     String?
-  type     String?
-  bedrooms Int?
-  price    Float?
+  id       Int @id @default(autoincrement()) // Primarni kljuc - automatski se povecava.
+  title    String // Naslov/kratak opis nekretnine.
+  address  String? // Adresa nekretnine (opciono).
+  city     String? // Grad gde se nekretnina nalazi (opciono).
+  type     String? // Tip nekretnine, npr. "apartment", "house" (opciono).
+  bedrooms Int? // Broj soba (opciono).
+  price    Float? // Cena nekretnine (opciono, kao broj).
 
-  deals Deal[]
+  deals Deal[] // 1:N veza - jedna nekretnina moze imati 0 ili vise dealova (vise pokusaja prodaje).
 }
 
 model Deal {
-  id            Int   @id @default(autoincrement())
-  title         String
-  expectedValue Float?
-  stage         String?
-  closeDate     DateTime?
+  id            Int   @id @default(autoincrement()) // Primarni kljuc - automatski se povecava.
+  title         String // Naziv posla, npr. "Petar buys Apartment".
+  expectedValue Float? // Ocekivana vrednost posla (cena/ponuda), opciono.
+  stage         String? // Faza deala, npr. "new", "negotiation", "won", "lost" (opciono).
+  closeDate     DateTime? // Datum zatvaranja deala (opciono).
 
-  userId     Int
-  user       User     @relation(fields: [userId], references: [id])
-  clientId   Int
-  client     Client   @relation(fields: [clientId], references: [id])
-  propertyId Int
-  property   Property @relation(fields: [propertyId], references: [id])
+  userId Int // Spoljni kljuc ka User (deal pripada tacno jednom korisniku).
+  user   User @relation(fields: [userId], references: [id]) // Veza Deal -> User.
 
-  activities Activity[]
+  clientId Int // Spoljni kljuc ka Client (u dealu ucestvuje tacno jedan klijent/kupac).
+  client   Client @relation(fields: [clientId], references: [id]) // Veza Deal -> Client.
+
+  propertyId Int // Spoljni kljuc ka Property (deal se odnosi na tacno jednu nekretninu).
+  property   Property @relation(fields: [propertyId], references: [id]) // Veza Deal -> Property.
+
+  activities Activity[] // 1:N veza - jedan deal ima vise aktivnosti (pozivi, sastanci, zadaci...).
 }
 
 model Activity {
-  id          Int   @id @default(autoincrement())
-  subject     String
-  type        String?
-  description String?
-  dueDate     DateTime?
+  id          Int   @id @default(autoincrement()) // Primarni kljuc - automatski se povecava.
+  subject     String // Kratak naslov aktivnosti, npr. "Initial call".
+  type        String? // Tip aktivnosti, npr. "call", "email", "meeting", "task" (opciono).
+  description String? // Detaljniji opis (opciono).
+  dueDate     DateTime? // Datum/vreme kada aktivnost treba da se desi (opciono).
 
-  dealId Int
-  deal   Deal @relation(fields: [dealId], references: [id])
+  dealId Int // Spoljni kljuc ka Deal (svaka aktivnost pripada tacno jednom dealu).
+  deal   Deal @relation(fields: [dealId], references: [id]) // Veza Activity -> Deal.
 }
