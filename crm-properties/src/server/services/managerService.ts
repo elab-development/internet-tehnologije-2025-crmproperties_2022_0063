@@ -4,11 +4,105 @@ import { prisma } from "../db/prisma";
 import { requireAuth } from "../auth/requireAuth";
 import { requireRole } from "../auth/requireRole";
 import { dealFilterSchema } from "../validators/managerValidators";
-import { httpError } from "../http/errors";
+import { httpError,  normalizeError } from "../http/errors";
+
+// Napomena: koristi isti validator kao seller, ali bez seller ownership provere.
+import { updateClientSchema } from "../validators/clientValidators";
 
 // Pomocna funkcija: deal je zatvoren ako ima closeDate ili stage = won/lost.
 function isClosed(stage: string | null, closeDate: Date | null) {
   return !!closeDate || stage === "won" || stage === "lost";
+}
+
+// Pregled klijenata za izabranog prodavca (Menadzer).
+export async function managerListSellerClients(sellerId: number) {
+  const session = await requireAuth();
+  requireRole(session.role, ["manager", "admin"]);
+
+  const seller = await prisma.user.findUnique({
+    where: { id: sellerId },
+    select: { id: true, role: true, name: true, email: true },
+  });
+
+  if (!seller || seller.role !== "seller") {
+    throw httpError(404, "Seller not found.");
+  }
+
+  // Klijenti koji imaju bar jedan deal sa ovim seller-om.
+  const clients = await prisma.client.findMany({
+    where: { deals: { some: { userId: sellerId } } },
+    orderBy: { id: "desc" },
+    select: {
+      id: true,
+      name: true,
+      email: true,
+      phone: true,
+      city: true,
+      deals: {
+        where: { userId: sellerId },
+        select: { stage: true, closeDate: true },
+      },
+    },
+  });
+
+  const rows = clients.map((c) => {
+    const closed = c.deals.filter((d) => isClosed(d.stage, d.closeDate)).length;
+    const active = c.deals.length - closed;
+
+    return {
+      id: c.id,
+      name: c.name,
+      email: c.email,
+      phone: c.phone,
+      city: c.city,
+      dealsCount: c.deals.length,
+      activeDealsCount: active,
+      closedDealsCount: closed,
+    };
+  });
+
+  return {
+    seller: { id: seller.id, name: seller.name, email: seller.email },
+    clients: rows,
+  };
+}
+
+// Pregled jednog klijenta (Menadzer).
+export async function managerGetClient(clientId: number) {
+  const session = await requireAuth();
+  requireRole(session.role, ["manager", "admin"]);
+
+  const client = await prisma.client.findUnique({
+    where: { id: clientId },
+    select: { id: true, name: true, email: true, phone: true, city: true },
+  });
+
+  if (!client) throw httpError(404, "Client not found.");
+
+  return { client };
+}
+
+// Azuriranje klijenta (Menadzer).
+export async function managerUpdateClient(clientId: number, input: unknown) {
+  const session = await requireAuth();
+  requireRole(session.role, ["manager", "admin"]);
+
+  const data = updateClientSchema.parse(input);
+
+  const exists = await prisma.client.findUnique({ where: { id: clientId }, select: { id: true } });
+  if (!exists) throw httpError(404, "Client not found.");
+
+  try {
+    const client = await prisma.client.update({
+      where: { id: clientId },
+      data,
+      select: { id: true, name: true, email: true, phone: true, city: true },
+    });
+
+    return { message: "Client updated successfully.", client };
+  } catch (e) {
+    throw normalizeError(e);
+  }
 }
 
 // SK8 Pregled prodavaca i liste njihovih dealova (Menadzer).
