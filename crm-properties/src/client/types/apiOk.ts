@@ -1,0 +1,1 @@
+export type ApiOk<T> = { ok: true; data: T };
