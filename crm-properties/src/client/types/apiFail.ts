@@ -1,0 +1,1 @@
+export type ApiFail = { ok: false; message: string };
