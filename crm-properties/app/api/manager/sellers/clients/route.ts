@@ -1,25 +1,25 @@
-import { ok, failFromError } from "@/src/server/http/response";
+// src/app/api/manager/sellers/clients/route.ts
+
+import { ok, fail, failFromError } from "@/src/server/http/response";
 import { normalizeError } from "@/src/server/http/errors";
-import { sellerCreateClient, sellerListMyClients } from "@/src/server/services/sellerService";
+import { managerListSellerClients } from "@/src/server/services/managerService";
 
 export const runtime = "nodejs";
 
-// SK12 Pregled sopstvenih klijenata (Prodavac).
-export async function GET() {
+// SK? Pregled klijenata izabranog prodavca (Menadzer).
+export async function GET(req: Request) {
   try {
-    const result = await sellerListMyClients();
-    return ok(result);
-  } catch (e) {
-    return failFromError(normalizeError(e));
-  }
-}
+    // Uzimamo sellerId iz query parametra.
+    const url = new URL(req.url);
+    const raw = url.searchParams.get("sellerId");
+    const sellerId = Number(raw);
 
-// SK13 Dodavanje novog klijenta (Prodavac).
-export async function POST(req: Request) {
-  try {
-    const body = await req.json();
-    const result = await sellerCreateClient(body);
-    return ok(result, 201);
+    if (!Number.isInteger(sellerId) || sellerId <= 0) {
+      return fail("sellerId query param is required.", 400);
+    }
+
+    const result = await managerListSellerClients(sellerId);
+    return ok(result);
   } catch (e) {
     return failFromError(normalizeError(e));
   }
