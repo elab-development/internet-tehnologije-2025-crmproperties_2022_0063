@@ -36,6 +36,54 @@ export async function sellerListMyClients() {
   return { clients };
 }
 
+// GET lista dealova prodavca (koristi se na Manage Deals stranici).
+export async function sellerListDeals() {
+  const session = await requireAuth();
+  requireRole(session.role, ["seller", "admin"]);
+
+  // Prodavac vidi samo svoje dealove. Admin moze da vidi sve.
+  const where = session.role === "admin" ? {} : { userId: session.sub };
+
+  const deals = await prisma.deal.findMany({
+    where,
+    orderBy: { id: "desc" },
+    include: {
+      client: { select: { id: true, name: true } },
+      property: { select: { id: true, title: true } },
+    },
+  });
+
+  return { deals };
+}
+
+// GET lista klijenata (za combo box).
+export async function sellerListClients() {
+  const session = await requireAuth();
+  requireRole(session.role, ["seller", "admin"]);
+
+  // U ovoj verziji uzimamo sve klijente iz baze.
+  // Ako kasnije budeš imala vezu "client -> seller", ovde samo promeni where uslov.
+  const clients = await prisma.client.findMany({
+    orderBy: { name: "asc" },
+    select: { id: true, name: true },
+  });
+
+  return { clients };
+}
+
+// GET lista nekretnina (za combo box).
+export async function sellerListProperties() {
+  const session = await requireAuth();
+  requireRole(session.role, ["seller", "admin"]);
+
+  const properties = await prisma.property.findMany({
+    orderBy: { title: "asc" },
+    select: { id: true, title: true },
+  });
+
+  return { properties };
+}
+
 // SK13 Dodavanje novog klijenta (Prodavac).
 export async function sellerCreateClient(input: unknown) {
   const session = await requireAuth();
@@ -179,6 +227,12 @@ export async function sellerAddActivity(dealId: number, input: unknown) {
 
   if (session.role === "seller" && deal.userId !== session.sub) {
     throw httpError(403, "You cannot add activity to this deal.");
+  }
+
+  // Proveravamo dueDate da ne bismo slali Invalid Date u bazu.
+  const due = data.dueDate ? new Date(data.dueDate) : null;
+  if (due && Number.isNaN(due.getTime())) {
+    throw httpError(400, "Invalid dueDate.");
   }
 
   const activity = await prisma.activity.create({
