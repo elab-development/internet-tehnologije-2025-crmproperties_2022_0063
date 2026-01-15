@@ -38,7 +38,7 @@ async function main() {
     },
   });
 
-  const manager = await prisma.user.create({
+  await prisma.user.create({
     data: {
       name: "Marko Manager",
       email: "manager@crmproperties.com",
@@ -48,7 +48,7 @@ async function main() {
     },
   });
 
-  const admin = await prisma.user.create({
+  await prisma.user.create({
     data: {
       name: "Ivana Admin",
       email: "admin@crmproperties.com",
