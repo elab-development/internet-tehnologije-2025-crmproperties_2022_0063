@@ -6,7 +6,10 @@ export const runtime = "nodejs";
 
 async function getId(params: any): Promise<number> {
   const p = params && typeof params.then === "function" ? await params : params;
-  const raw = p?.id;
+
+  // podrži i [id] i [dealId]
+  const raw = p?.id ?? p?.dealId;
+
   const id = Number(raw);
   return Number.isInteger(id) && id > 0 ? id : NaN;
 }
