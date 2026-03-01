@@ -2,7 +2,7 @@
 
 CRM Properties je full-stack web aplikacija za upravljanje prodajom nekretnina (CRM). Sistem je organizovan po ulogama (**seller**, **manager**, **admin**) i omogućava rad nad klijentima, nekretninama, deal-ovima (pipeline) i aktivnostima, uz stranice za metrike i dodatne “competitors/concurrents” informacije.
 
-![CRM Properties Logo](./app/favicon.ico)
+![CRM Properties Logo](./crm-properties/app/favicon.ico)
 
 > Struktura repozitorijuma (jedan Next.js projekat).
 > - `app/` — Next.js App Router (stranice + API rute).
