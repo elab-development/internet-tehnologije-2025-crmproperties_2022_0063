@@ -49,8 +49,6 @@ Aplikacija ima metrike koje UI prikazuje kroz dijagrame (Recharts):
 - **Manager seller metrics**: metrike po izabranom selleru (deal counts, pipeline composition, values).
 - **Admin metrics**: metrike agregirane za sve sellere (globalni pregled).
 
-> Napomena (dogovor u projektu): metrike se prikazuju “generalno”, bez filtera u odnosu na `closeDate`, osim ako je eksplicitno uveden filter na UI.
-
 ---
 
 ## Competitors / Concurrents.
@@ -134,8 +132,6 @@ Otvori:
 - Swagger UI: `http://localhost:3000/swagger/index.html`
 - OpenAPI: `http://localhost:3000/swagger/openapi.yaml`
 
-> Bitno: auth je HttpOnly cookie based. Swagger UI treba da šalje cookies (`credentials=include`).
-
 ---
 
 ## Pokretanje projekta uz Docker.
@@ -148,8 +144,6 @@ U root-u repozitorijuma preimenuj fajlove tako da su “crm-properties”:
 
 - `Dockerfile.frontend` → `Dockerfile.crm-properties.frontend`
 - `Dockerfile.backend` → `Dockerfile.crm-properties.backend`
-
-(ili alternativno: `Dockerfile.frontend.crm-properties`, `Dockerfile.backend.crm-properties` — bitno je da `docker-compose.yaml` pokazuje na tačan naziv).
 
 ### docker-compose.yaml (primer: CRM Properties).
 
@@ -192,16 +186,3 @@ Prisma Studio:
 - `GET/POST/PATCH/DELETE` rute za `clients`, `properties`, `deals`, `activities` (u skladu sa implementacijom u `app/api/*`).
 
 ---
-
-## Bezbednosne napomene.
-
-- Ne commituje se `.env`.
-- API ključevi (Alpha Vantage, ExchangeRates API) se drže isključivo u `.env`.
-- RBAC mora biti enforced na serveru (ne oslanjati se samo na UI).
-
----
-
-## Autori.
-
-- Autor: (upiši svoje podatke ovde).
-- Projekat: CRM Properties (CRM Nekretnine).

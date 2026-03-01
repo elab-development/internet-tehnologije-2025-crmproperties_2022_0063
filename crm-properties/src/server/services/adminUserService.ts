@@ -9,6 +9,7 @@ import { httpError, normalizeError } from "../http/errors";
 // SK4 Pregled svih korisnika i njihovih uloga (Administrator).
 export async function adminListUsers() {
   const session = await requireAuth();
+  
   requireRole(session.role, ["admin"]);
 
   const users = await prisma.user.findMany({

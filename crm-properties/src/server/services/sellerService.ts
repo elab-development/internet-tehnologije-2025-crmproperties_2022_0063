@@ -8,7 +8,7 @@ import { createDealSchema, updateDealStageSchema } from "../validators/dealValid
 import { createActivitySchema } from "../validators/activityValidators";
 import { httpError, normalizeError } from "../http/errors";
 
-// Jednostavan redosled faza za proveru dozvoljenih prelaza (SK16).
+// Jednostavan redosled faza za proveru dozvoljenih prelaza.
 const stageOrder = ["new", "negotiation", "offer_sent", "won", "lost"] as const;
 
 function stageIndex(stage: string) {
@@ -16,12 +16,11 @@ function stageIndex(stage: string) {
   return i === -1 ? 0 : i;
 }
 
-// SK12 Pregled sopstvenih klijenata (Prodavac).
+// Pregled sopstvenih klijenata (Prodavac).
 export async function sellerListMyClients() {
   const session = await requireAuth();
   requireRole(session.role, ["seller", "admin"]);
 
-  // U tvojoj semi Client nema ownerId, pa "moji klijenti" znaci:
   // klijenti koji imaju bar jedan deal sa ovim prodavcem.
   const clients = await prisma.client.findMany({
     where: { deals: { some: { userId: session.sub } } },
@@ -62,7 +61,6 @@ export async function sellerListClients() {
   requireRole(session.role, ["seller", "admin"]);
 
   // U ovoj verziji uzimamo sve klijente iz baze.
-  // Ako kasnije budeš imala vezu "client -> seller", ovde samo promeni where uslov.
   const clients = await prisma.client.findMany({
     orderBy: { name: "asc" },
     select: { id: true, name: true },
@@ -104,7 +102,7 @@ export async function sellerCreateClient(input: unknown) {
   }
 }
 
-// SK14 Azuriranje klijenta (Prodavac).
+// Azuriranje klijenta (Prodavac).
 export async function sellerUpdateClient(clientId: number, input: unknown) {
   const session = await requireAuth();
   requireRole(session.role, ["seller", "admin"]);
@@ -135,7 +133,7 @@ export async function sellerUpdateClient(clientId: number, input: unknown) {
   }
 }
 
-// SK15 Kreiranje novog deala (Prodavac).
+// Kreiranje novog deala (Prodavac).
 export async function sellerCreateDeal(input: unknown) {
   const session = await requireAuth();
   requireRole(session.role, ["seller", "admin"]);
@@ -195,7 +193,6 @@ export async function sellerUpdateDealStage(dealId: number, input: unknown) {
   const currentStage = deal.stage || "new";
   const nextStage = data.stage;
 
-  // Najjednostavnije pravilo: ne dozvoljavamo "vracanje unazad" kroz faze.
   if (stageIndex(nextStage) < stageIndex(currentStage)) {
     throw httpError(400, "Stage transition is not allowed.");
   }
@@ -211,7 +208,7 @@ export async function sellerUpdateDealStage(dealId: number, input: unknown) {
   return { message: "Deal stage updated successfully.", deal: updated };
 }
 
-// SK17 Dodavanje aktivnosti na deal (Prodavac).
+// Dodavanje aktivnosti na deal (Prodavac).
 export async function sellerAddActivity(dealId: number, input: unknown) {
   const session = await requireAuth();
   requireRole(session.role, ["seller", "admin"]);
@@ -248,7 +245,7 @@ export async function sellerAddActivity(dealId: number, input: unknown) {
   return { message: "Activity added successfully.", activity };
 }
 
-// SK17 Pregled aktivnosti na dealu (Prodavac).
+// Pregled aktivnosti na dealu (Prodavac).
 export async function sellerListActivities(dealId: number) {
   const session = await requireAuth();
   requireRole(session.role, ["seller", "admin"]);

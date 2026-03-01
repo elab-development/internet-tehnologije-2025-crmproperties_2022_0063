@@ -5,7 +5,7 @@ import { requireAuth } from "../auth/requireAuth";
 import { requireRole } from "../auth/requireRole";
 import { httpError } from "../http/errors";
 
-// SK6 Pregled globalnih metrika (Administrator).
+// Pregled globalnih metrika (Administrator).
 export async function adminGetGlobalMetrics() {
   const session = await requireAuth();
   requireRole(session.role, ["admin"]);
@@ -38,7 +38,7 @@ export async function adminGetGlobalMetrics() {
   }
 }
 
-// SK7 Eksport metrika (Administrator) - CSV format (najlakse za pocetnike).
+// Eksport metrika (Administrator) - CSV format
 export async function adminExportGlobalMetricsCsv() {
   const { metrics } = await adminGetGlobalMetrics();
 

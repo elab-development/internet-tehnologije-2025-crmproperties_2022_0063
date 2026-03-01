@@ -21,7 +21,7 @@ export async function registerUser(input: unknown) {
     const passwordHash = await hashPassword(data.password);
 
     // Za pocetnike: javna registracija uvek dodeljuje ulogu "seller".
-    // Admin ce kasnije moci da menja uloge kroz admin funkcije.
+    // Admin ce kasnije moci da menja uloge kroz admin funkcije u svojoj sesiji.
     const role: Role = "seller";
 
     const user = await prisma.user.create({

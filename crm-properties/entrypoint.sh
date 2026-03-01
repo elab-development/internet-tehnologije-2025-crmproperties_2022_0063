@@ -10,7 +10,7 @@ if [ ! -d "node_modules" ] || [ -z "$(ls -A node_modules 2>/dev/null)" ]; then
 fi
 
 echo "▶ Waiting for database..."
-until pg_isready -h "${DB_HOST:-db}" -p "${DB_PORT:-5432}" -U "${DB_USER:-postgres}" -d "${DB_NAME:-itcrm}" >/dev/null 2>&1
+until pg_isready -h "${DB_HOST:-db}" -p "${DB_PORT:-5432}" -U "${DB_USER:-postgres}" -d "${DB_NAME:-crmproperties}" >/dev/null 2>&1
 do
   sleep 1
 done
