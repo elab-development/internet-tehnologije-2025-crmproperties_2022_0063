@@ -69,7 +69,7 @@ export default function NavigationMenu() {
     return [
       { href: "/pages/admin/home", label: "Home" },
       { href: "/pages/admin/manage-users", label: "Manage Users" },
-      { href: "/pages/admin/metrics", label: "Metrics" },
+      { href: "/pages/admin/concurrents", label: "Concurrents" },
     ];
   }, [user]);
 
