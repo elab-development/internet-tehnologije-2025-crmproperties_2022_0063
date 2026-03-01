@@ -1,0 +1,859 @@
+openapi: 3.0.3
+info:
+  title: CRM Properties API
+  version: 1.0.0
+  description: >
+    OpenAPI dokumentacija za Next.js API rute u app/api.
+    Auth je cookie-based (HttpOnly cookie). U Swagger UI prvo pozovi /api/auth/login,
+    pa će dalji pozivi automatski nositi cookie (credentials=include).
+
+servers:
+  - url: http://localhost:3000
+
+tags:
+  - name: Auth
+  - name: Seller
+  - name: Manager
+  - name: Admin
+  - name: Metrics
+  - name: Competitors
+
+components:
+  securitySchemes:
+    cookieAuth:
+      type: apiKey
+      in: cookie
+      # TODO: Zameni ovde ako je drugačije u src/server/auth/session.ts.
+      name: crmproperties_session
+
+  schemas:
+    ApiFail:
+      type: object
+      properties:
+        ok: { type: boolean, example: false }
+        message: { type: string }
+        details:
+          nullable: true
+          description: Optional extra details (validation, Prisma errors, etc.).
+      required: [ok, message]
+
+    ApiOkMe:
+      type: object
+      properties:
+        ok: { type: boolean, example: true }
+        data:
+          $ref: "#/components/schemas/Me"
+      required: [ok, data]
+
+    ApiOkGeneric:
+      type: object
+      properties:
+        ok: { type: boolean, example: true }
+        data:
+          nullable: true
+      required: [ok, data]
+
+    Role:
+      type: string
+      enum: [seller, manager, admin]
+
+    Me:
+      type: object
+      properties:
+        id: { type: integer, format: int32 }
+        name: { type: string }
+        email: { type: string, format: email }
+        role: { $ref: "#/components/schemas/Role" }
+      required: [id, name, email, role]
+
+    User:
+      type: object
+      properties:
+        id: { type: integer, format: int32 }
+        name: { type: string }
+        email: { type: string, format: email }
+        role: { $ref: "#/components/schemas/Role" }
+      required: [id, name, email, role]
+
+    Client:
+      type: object
+      properties:
+        id: { type: integer, format: int32 }
+        name: { type: string }
+        email:
+          type: string
+          format: email
+          nullable: true
+        phone:
+          type: string
+          nullable: true
+        country:
+          type: string
+          nullable: true
+        city:
+          type: string
+          nullable: true
+        notes:
+          type: string
+          nullable: true
+        sellerId: { type: integer, format: int32 }
+      required: [id, name, sellerId]
+
+    PropertyStatus:
+      type: string
+      enum: [available, unavailable, paused]
+
+    Property:
+      type: object
+      properties:
+        id: { type: integer, format: int32 }
+        title: { type: string }
+        address:
+          type: string
+          nullable: true
+        city:
+          type: string
+          nullable: true
+        country:
+          type: string
+          nullable: true
+        price:
+          type: number
+          description: Asking price or internal price field.
+        status: { $ref: "#/components/schemas/PropertyStatus" }
+        sellerId: { type: integer, format: int32 }
+      required: [id, title, status, sellerId]
+
+    DealStage:
+      type: string
+      enum: [new, negotiation, offer_sent, won, lost]
+
+    Deal:
+      type: object
+      properties:
+        id: { type: integer, format: int32 }
+        title: { type: string }
+        stage: { $ref: "#/components/schemas/DealStage" }
+        expectedValue:
+          type: number
+          description: Expected value for this deal.
+        closeDate:
+          type: string
+          format: date-time
+          nullable: true
+        clientId: { type: integer, format: int32 }
+        propertyId:
+          type: integer
+          format: int32
+          nullable: true
+        sellerId: { type: integer, format: int32 }
+      required: [id, title, stage, expectedValue, clientId, sellerId]
+
+    ActivityEntityType:
+      type: string
+      enum: [client, deal]
+
+    ActivityType:
+      type: string
+      enum: [note, call, meeting]
+
+    Activity:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        userId: { type: integer, format: int32 }
+        entityType: { $ref: "#/components/schemas/ActivityEntityType" }
+        entityId: { type: integer, format: int32 }
+        type: { $ref: "#/components/schemas/ActivityType" }
+        description: { type: string }
+        createdAt: { type: string, format: date-time }
+      required: [id, userId, entityType, entityId, type, description, createdAt]
+
+    AdminMetrics:
+      type: object
+      properties:
+        totalSellers: { type: integer }
+        totalClients: { type: integer }
+        totalProperties: { type: integer }
+        totalDeals: { type: integer }
+        wonDeals: { type: integer }
+        lostDeals: { type: integer }
+        totalExpectedValue: { type: number }
+      required:
+        - totalSellers
+        - totalClients
+        - totalProperties
+        - totalDeals
+        - wonDeals
+        - lostDeals
+        - totalExpectedValue
+
+    SellerRow:
+      type: object
+      properties:
+        id: { type: integer, format: int32 }
+        name: { type: string }
+        email: { type: string, format: email }
+      required: [id, name, email]
+
+    SellersResponse:
+      type: object
+      properties:
+        sellers:
+          type: array
+          items: { $ref: "#/components/schemas/SellerRow" }
+      required: [sellers]
+
+    SellerMetrics:
+      type: object
+      properties:
+        totalDeals: { type: integer }
+        closedDeals: { type: integer }
+        wonDeals: { type: integer }
+        lostDeals: { type: integer }
+        totalExpectedValue: { type: number }
+        wonValue: { type: number }
+      required: [totalDeals, closedDeals, wonDeals, lostDeals, totalExpectedValue, wonValue]
+
+    SellerMetricsResponse:
+      type: object
+      properties:
+        metrics:
+          allOf:
+            - $ref: "#/components/schemas/SellerMetrics"
+          nullable: true
+        message:
+          type: string
+          nullable: true
+      required: [metrics]
+
+    CompetitorStock:
+      type: object
+      properties:
+        symbol: { type: string }
+        name: { type: string }
+        currency: { type: string, enum: [USD] }
+        priceUsd: { type: number }
+        priceConverted: { type: number }
+        convertedTo: { type: string, enum: [USD, EUR] }
+        changePercent:
+          type: number
+          nullable: true
+        updatedAt:
+          type: string
+          nullable: true
+        imageUrl: { type: string }
+      required:
+        - symbol
+        - name
+        - currency
+        - priceUsd
+        - priceConverted
+        - convertedTo
+        - imageUrl
+
+    CompetitorsResponse:
+      type: object
+      properties:
+        baseCurrency: { type: string, enum: [USD] }
+        convertedTo: { type: string, enum: [USD, EUR] }
+        fxRate: { type: number, description: USD -> convertedTo }
+        items:
+          type: array
+          items: { $ref: "#/components/schemas/CompetitorStock" }
+        note:
+          type: string
+          nullable: true
+      required: [baseCurrency, convertedTo, fxRate, items]
+
+paths:
+  /api/auth/register:
+    post:
+      tags: [Auth]
+      summary: Register (creates seller by default in your service).
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name: { type: string, minLength: 1 }
+                email: { type: string, format: email }
+                password: { type: string, minLength: 6 }
+              required: [name, email, password]
+      responses:
+        "200":
+          description: Registered + auto-login (cookie set).
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ApiOkMe" }
+        "409":
+          description: Conflict.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ApiFail" }
+        "422":
+          description: Validation error.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ApiFail" }
+
+  /api/auth/login:
+    post:
+      tags: [Auth]
+      summary: Login (sets HttpOnly session cookie).
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                email: { type: string, format: email }
+                password: { type: string, minLength: 1 }
+              required: [email, password]
+      responses:
+        "200":
+          description: Logged in (cookie set).
+          headers:
+            Set-Cookie:
+              schema: { type: string }
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ApiOkMe" }
+        "401":
+          description: Unauthorized.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ApiFail" }
+
+  /api/auth/logout:
+    post:
+      tags: [Auth]
+      summary: Logout (clears cookie).
+      security:
+        - cookieAuth: []
+      responses:
+        "200":
+          description: Logged out.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ApiOkGeneric" }
+
+  /api/auth/me:
+    get:
+      tags: [Auth]
+      summary: Current user (refreshes sliding session).
+      security:
+        - cookieAuth: []
+      responses:
+        "200":
+          description: Me.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ApiOkMe" }
+        "401":
+          description: Not logged in.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ApiFail" }
+
+  /api/seller/clients:
+    get:
+      tags: [Seller]
+      summary: List seller clients.
+      security:
+        - cookieAuth: []
+      responses:
+        "200":
+          description: Clients list.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok: { type: boolean, example: true }
+                  data:
+                    type: object
+                    properties:
+                      clients:
+                        type: array
+                        items: { $ref: "#/components/schemas/Client" }
+                    required: [clients]
+                required: [ok, data]
+        "401":
+          description: Unauthorized.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ApiFail" }
+        "403":
+          description: Forbidden (role).
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ApiFail" }
+    post:
+      tags: [Seller]
+      summary: Create client (seller).
+      security:
+        - cookieAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name: { type: string, minLength: 1 }
+                email: { type: string, format: email, nullable: true }
+                phone: { type: string, nullable: true }
+                country: { type: string, nullable: true }
+                city: { type: string, nullable: true }
+                notes: { type: string, nullable: true }
+              required: [name]
+      responses:
+        "200":
+          description: Created.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok: { type: boolean, example: true }
+                  data:
+                    type: object
+                    properties:
+                      client: { $ref: "#/components/schemas/Client" }
+                    required: [client]
+                required: [ok, data]
+
+  /api/seller/properties:
+    get:
+      tags: [Seller]
+      summary: List seller properties.
+      security:
+        - cookieAuth: []
+      responses:
+        "200":
+          description: Properties list.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok: { type: boolean, example: true }
+                  data:
+                    type: object
+                    properties:
+                      properties:
+                        type: array
+                        items: { $ref: "#/components/schemas/Property" }
+                    required: [properties]
+                required: [ok, data]
+    post:
+      tags: [Seller]
+      summary: Create property (seller).
+      security:
+        - cookieAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                title: { type: string, minLength: 1 }
+                address: { type: string, nullable: true }
+                city: { type: string, nullable: true }
+                country: { type: string, nullable: true }
+                price: { type: number }
+                status: { $ref: "#/components/schemas/PropertyStatus" }
+              required: [title, price, status]
+      responses:
+        "200":
+          description: Created.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok: { type: boolean, example: true }
+                  data:
+                    type: object
+                    properties:
+                      property: { $ref: "#/components/schemas/Property" }
+                    required: [property]
+                required: [ok, data]
+
+  /api/seller/deals:
+    get:
+      tags: [Seller]
+      summary: List seller deals.
+      security:
+        - cookieAuth: []
+      parameters:
+        - in: query
+          name: stage
+          schema: { $ref: "#/components/schemas/DealStage" }
+      responses:
+        "200":
+          description: Deals list.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok: { type: boolean, example: true }
+                  data:
+                    type: object
+                    properties:
+                      deals:
+                        type: array
+                        items: { $ref: "#/components/schemas/Deal" }
+                    required: [deals]
+                required: [ok, data]
+    post:
+      tags: [Seller]
+      summary: Create deal (seller).
+      security:
+        - cookieAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                title: { type: string, minLength: 1 }
+                expectedValue: { type: number, minimum: 0 }
+                clientId: { type: integer, format: int32 }
+                propertyId: { type: integer, format: int32, nullable: true }
+              required: [title, expectedValue, clientId]
+      responses:
+        "200":
+          description: Created.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok: { type: boolean, example: true }
+                  data:
+                    type: object
+                    properties:
+                      deal: { $ref: "#/components/schemas/Deal" }
+                    required: [deal]
+                required: [ok, data]
+
+  /api/seller/deals/{id}/stage:
+    patch:
+      tags: [Seller]
+      summary: Change deal stage (seller). new -> negotiation -> offer_sent -> won/lost.
+      security:
+        - cookieAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: integer, format: int32 }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                stage: { $ref: "#/components/schemas/DealStage" }
+              required: [stage]
+      responses:
+        "200":
+          description: Updated.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok: { type: boolean, example: true }
+                  data:
+                    type: object
+                    properties:
+                      deal: { $ref: "#/components/schemas/Deal" }
+                    required: [deal]
+                required: [ok, data]
+
+  /api/seller/activities:
+    get:
+      tags: [Seller]
+      summary: List activities (seller scope).
+      security:
+        - cookieAuth: []
+      parameters:
+        - in: query
+          name: entityType
+          schema: { $ref: "#/components/schemas/ActivityEntityType" }
+        - in: query
+          name: entityId
+          schema: { type: integer, format: int32 }
+      responses:
+        "200":
+          description: Activities.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok: { type: boolean, example: true }
+                  data:
+                    type: object
+                    properties:
+                      activities:
+                        type: array
+                        items: { $ref: "#/components/schemas/Activity" }
+                    required: [activities]
+                required: [ok, data]
+    post:
+      tags: [Seller]
+      summary: Create activity.
+      security:
+        - cookieAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                entityType: { $ref: "#/components/schemas/ActivityEntityType" }
+                entityId: { type: integer, format: int32 }
+                type: { $ref: "#/components/schemas/ActivityType" }
+                description: { type: string, minLength: 1 }
+              required: [entityType, entityId, type, description]
+      responses:
+        "200":
+          description: Created.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok: { type: boolean, example: true }
+                  data:
+                    type: object
+                    properties:
+                      activity: { $ref: "#/components/schemas/Activity" }
+                    required: [activity]
+                required: [ok, data]
+
+  /api/manager/sellers:
+    get:
+      tags: [Manager]
+      summary: List sellers (manager only).
+      security:
+        - cookieAuth: []
+      responses:
+        "200":
+          description: Sellers.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok: { type: boolean, example: true }
+                  data: { $ref: "#/components/schemas/SellersResponse" }
+                required: [ok, data]
+        "403":
+          description: Forbidden (role).
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ApiFail" }
+
+  /api/manager/sellers/{id}/metrics:
+    get:
+      tags: [Manager]
+      summary: Seller metrics by seller id (manager only).
+      description: >
+        In tvojoj UI verziji, filter na closeDate si uklonio.
+        Ovaj endpoint vraća generalne metrike za seller-a (bez closeDate filtera),
+        ili može ignorisati from/to parametre ako ih ipak pošalješ.
+      security:
+        - cookieAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: integer, format: int32 }
+        - in: query
+          name: from
+          schema:
+            type: string
+            description: Optional ISO date (YYYY-MM-DD).
+        - in: query
+          name: to
+          schema:
+            type: string
+            description: Optional ISO date (YYYY-MM-DD).
+      responses:
+        "200":
+          description: Metrics.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok: { type: boolean, example: true }
+                  data: { $ref: "#/components/schemas/SellerMetricsResponse" }
+                required: [ok, data]
+
+  /api/admin/users:
+    get:
+      tags: [Admin]
+      summary: List users (admin only).
+      security:
+        - cookieAuth: []
+      parameters:
+        - in: query
+          name: q
+          schema: { type: string }
+        - in: query
+          name: role
+          schema: { $ref: "#/components/schemas/Role" }
+      responses:
+        "200":
+          description: Users list.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok: { type: boolean, example: true }
+                  data:
+                    type: object
+                    properties:
+                      users:
+                        type: array
+                        items: { $ref: "#/components/schemas/User" }
+                    required: [users]
+                required: [ok, data]
+
+  /api/admin/users/{id}:
+    patch:
+      tags: [Admin]
+      summary: Update user (admin only).
+      security:
+        - cookieAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: integer, format: int32 }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name: { type: string }
+                email: { type: string, format: email }
+                role: { $ref: "#/components/schemas/Role" }
+      responses:
+        "200":
+          description: Updated.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok: { type: boolean, example: true }
+                  data:
+                    type: object
+                    properties:
+                      user: { $ref: "#/components/schemas/User" }
+                    required: [user]
+                required: [ok, data]
+
+  /api/admin/metrics:
+    get:
+      tags: [Metrics]
+      summary: Admin metrics (all sellers).
+      security:
+        - cookieAuth: []
+      responses:
+        "200":
+          description: Metrics.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok: { type: boolean, example: true }
+                  data:
+                    type: object
+                    properties:
+                      metrics: { $ref: "#/components/schemas/AdminMetrics" }
+                    required: [metrics]
+                required: [ok, data]
+
+  /api/admin/metrics/export:
+    get:
+      tags: [Metrics]
+      summary: Export metrics as CSV (admin).
+      security:
+        - cookieAuth: []
+      responses:
+        "200":
+          description: CSV file.
+          content:
+            text/csv:
+              schema:
+                type: string
+
+  /api/admin/competitors:
+    get:
+      tags: [Competitors]
+      summary: Competitor stocks (admin).
+      security:
+        - cookieAuth: []
+      parameters:
+        - in: query
+          name: currency
+          schema:
+            type: string
+            enum: [USD, EUR]
+            default: USD
+        - in: query
+          name: fxOnly
+          schema:
+            type: string
+            description: "If '1', returns only fxRate quickly (items: [])."
+        - in: query
+          name: symbol
+          schema:
+            type: string
+            description: "If provided, returns a single competitor item."
+        - in: query
+          name: fxRate
+          schema:
+            type: number
+            description: "Optional client-provided fxRate to skip FX provider call."
+      responses:
+        "200":
+          description: Competitors response.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok: { type: boolean, example: true }
+                  data: { $ref: "#/components/schemas/CompetitorsResponse" }
+                required: [ok, data]
+        "401":
+          description: Unauthorized.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ApiFail" }
+        "403":
+          description: Forbidden (role).
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ApiFail" }
