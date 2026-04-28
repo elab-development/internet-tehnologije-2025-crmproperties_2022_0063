@@ -1,15 +1,107 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
-
 generator client {
-  provider = "prisma-client"
-  output   = "../app/generated/prisma"
+  provider = "prisma-client-js"
 }
 
 datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  shadowDatabaseUrl = env("SHADOW_DATABASE_URL")
+}
+
+enum Role {
+  ADMIN
+  MANAGER
+  AGENT
+}
+
+enum ClientStatus {
+  ACTIVE
+  INACTIVE
+}
+
+enum PropertyStatus {
+  AVAILABLE
+  RESERVED
+  SOLD
+}
+
+enum InterestStatus {
+  NEW
+  CONTACTED
+  VIEWING_SCHEDULED
+  CLOSED
+}
+
+enum ActivityType {
+  CALL
+  MESSAGE
+  MEETING
+  VIEWING
+}
+
+model User {
+  id         Int        @id @default(autoincrement())
+  name       String
+  email      String     @unique
+  password   String
+  role       Role
+  properties Property[]
+  activities Activity[]
+  createdAt  DateTime   @default(now())
+  updatedAt  DateTime   @updatedAt
+}
+
+model Client {
+  id         Int                      @id @default(autoincrement())
+  name       String
+  email      String?
+  phone      String
+  status     ClientStatus             @default(ACTIVE)
+  interests  ClientPropertyInterest[]
+  createdAt  DateTime                 @default(now())
+  updatedAt  DateTime                 @updatedAt
+}
+
+model Property {
+  id          Int                      @id @default(autoincrement())
+  title       String
+  description String
+  status      PropertyStatus           @default(AVAILABLE)
+  price       Float
+  address     String
+  city        String
+  type        String
+  imageUrl    String?
+  userId      Int
+  user        User                     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  interests   ClientPropertyInterest[]
+  createdAt   DateTime                 @default(now())
+  updatedAt   DateTime                 @updatedAt
+}
+
+model ClientPropertyInterest {
+  id         Int              @id @default(autoincrement())
+  status     InterestStatus   @default(NEW)
+  note       String?
+  clientId   Int
+  propertyId Int
+  client     Client           @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  property   Property         @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  activities Activity[]
+  createdAt  DateTime         @default(now())
+  updatedAt  DateTime         @updatedAt
+  @@unique([clientId, propertyId])
+}
+
+model Activity {
+  id           Int                    @id @default(autoincrement())
+  type         ActivityType
+  description  String
+  activityDate DateTime
+  userId       Int
+  interestId   Int
+  user         User                   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  interest     ClientPropertyInterest @relation(fields: [interestId], references: [id], onDelete: Cascade)
+  createdAt    DateTime               @default(now())
+  updatedAt    DateTime               @updatedAt
 }
