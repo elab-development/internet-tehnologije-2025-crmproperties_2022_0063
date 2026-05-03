@@ -1,0 +1,63 @@
+version: "3.9"
+
+services:
+  crm-properties-app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: crm-properties-app
+    ports:
+      - "3000:3000"
+    env_file:
+      - .env.docker
+    environment:
+      DB_HOST: crm-properties-db
+      DB_PORT: 5432
+      DB_USER: postgres
+      DB_PASSWORD: postgres
+      DB_NAME: crm_properties
+    depends_on:
+      - crm-properties-db
+    volumes:
+      - .:/app
+      - /app/node_modules
+    restart: unless-stopped
+
+  crm-properties-db:
+    image: postgres:16-alpine
+    container_name: crm-properties-db
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_DB: crm_properties
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    volumes:
+      - crm_properties_db_data:/var/lib/postgresql/data
+    restart: unless-stopped
+
+  prisma-studio:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: crm-properties-studio
+    env_file:
+      - .env.docker
+    environment:
+      DB_HOST: crm-properties-db
+      DB_PORT: 5432
+      DB_USER: postgres
+      DB_PASSWORD: postgres
+      DB_NAME: crm_properties
+    depends_on:
+      - crm-properties-db
+    command: ["sh", "docker/studio-entrypoint.sh"]
+    ports:
+      - "5555:5555"
+    volumes:
+      - .:/app
+      - /app/node_modules
+    restart: unless-stopped
+
+volumes:
+  crm_properties_db_data:
