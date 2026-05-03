@@ -1,0 +1,117 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>CRM Properties API Docs</title>
+
+    <link
+      rel="stylesheet"
+      href="https://unpkg.com/swagger-ui-dist@5/swagger-ui.css"
+    />
+
+    <style>
+      body {
+        margin: 0;
+        background: #0b0b10;
+      }
+
+      .topbar {
+        display: none;
+      }
+
+      #swagger-ui {
+        filter: invert(0);
+      }
+
+      .swagger-ui .info .title,
+      .swagger-ui .info p,
+      .swagger-ui .info li,
+      .swagger-ui .scheme-container,
+      .swagger-ui .opblock-tag,
+      .swagger-ui .opblock-summary-description,
+      .swagger-ui .response-col_status,
+      .swagger-ui .response-col_description,
+      .swagger-ui table thead tr td,
+      .swagger-ui table thead tr th,
+      .swagger-ui .parameter__name,
+      .swagger-ui .parameter__type,
+      .swagger-ui .model-title,
+      .swagger-ui .prop-type,
+      .swagger-ui .prop-name,
+      .swagger-ui .opblock-description-wrapper p,
+      .swagger-ui .tab li,
+      .swagger-ui label,
+      .swagger-ui .responses-inner h4,
+      .swagger-ui .responses-inner h5 {
+        color: #ffffff !important;
+      }
+
+      .swagger-ui .opblock.opblock-post {
+        border-color: #ff8c1a;
+        background: rgba(255, 140, 26, 0.08);
+      }
+
+      .swagger-ui .opblock.opblock-get {
+        border-color: #ffb15c;
+        background: rgba(255, 177, 92, 0.08);
+      }
+
+      .swagger-ui .opblock.opblock-put {
+        border-color: #ffffff;
+        background: rgba(255, 255, 255, 0.06);
+      }
+
+      .swagger-ui .opblock.opblock-delete {
+        border-color: #ff6b6b;
+        background: rgba(255, 107, 107, 0.08);
+      }
+
+      .swagger-ui .btn.execute {
+        background: #ff8c1a;
+        border-color: #ff8c1a;
+      }
+
+      .swagger-ui .btn.authorize {
+        background: #ffffff;
+        color: #111111;
+        border-color: #ffffff;
+      }
+
+      .swagger-ui input,
+      .swagger-ui textarea,
+      .swagger-ui select {
+        background: #17171d !important;
+        color: #ffffff !important;
+        border: 1px solid rgba(255, 255, 255, 0.15) !important;
+      }
+
+      .swagger-ui .model-box,
+      .swagger-ui section.models {
+        background: #111111 !important;
+      }
+    </style>
+  </head>
+
+  <body>
+    <div id="swagger-ui"></div>
+
+    <script src="https://unpkg.com/swagger-ui-dist@5/swagger-ui-bundle.js"></script>
+    <script src="https://unpkg.com/swagger-ui-dist@5/swagger-ui-standalone-preset.js"></script>
+
+    <script>
+      window.onload = () => {
+        window.ui = SwaggerUIBundle({
+          url: "/swagger/openapi.yaml",
+          dom_id: "#swagger-ui",
+          presets: [SwaggerUIBundle.presets.apis, SwaggerUIStandalonePreset],
+          layout: "BaseLayout",
+          requestInterceptor: (req) => {
+            req.credentials = "include";
+            return req;
+          },
+        });
+      };
+    </script>
+  </body>
+</html>

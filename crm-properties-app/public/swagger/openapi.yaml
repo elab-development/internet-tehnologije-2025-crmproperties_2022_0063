@@ -1,0 +1,1037 @@
+openapi: 3.0.3
+info:
+  title: CRM Properties API
+  version: 1.0.0
+  description: >
+    OpenAPI dokumentacija za CRM Properties Next.js API rute.
+    Auth koristi HttpOnly cookie sa nazivom "token".
+    U Swagger UI prvo pozovi /api/auth/login, pa će dalji pozivi automatski nositi cookie.
+
+servers:
+  - url: http://localhost:3000
+
+tags:
+  - name: Auth
+  - name: Clients
+  - name: Properties
+  - name: Interests
+  - name: Activities
+  - name: Metrics
+  - name: Market Chat
+
+components:
+  securitySchemes:
+    cookieAuth:
+      type: apiKey
+      in: cookie
+      name: token
+
+  schemas:
+    ApiFail:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: false
+        message:
+          type: string
+        error:
+          type: string
+          nullable: true
+      required: [success, message]
+
+    ApiSuccessMessage:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        message:
+          type: string
+      required: [success, message]
+
+    Role:
+      type: string
+      enum: [ADMIN, MANAGER, AGENT]
+
+    ClientStatus:
+      type: string
+      enum: [ACTIVE, INACTIVE]
+
+    PropertyStatus:
+      type: string
+      enum: [AVAILABLE, RESERVED, SOLD]
+
+    InterestStatus:
+      type: string
+      enum: [NEW, CONTACTED, VIEWING_SCHEDULED, CLOSED]
+
+    ActivityType:
+      type: string
+      enum: [CALL, MESSAGE, MEETING, VIEWING]
+
+    SafeUser:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int32
+        name:
+          type: string
+        email:
+          type: string
+          format: email
+        role:
+          $ref: "#/components/schemas/Role"
+      required: [id, name, email, role]
+
+    Client:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int32
+        name:
+          type: string
+        email:
+          type: string
+          format: email
+          nullable: true
+        phone:
+          type: string
+        status:
+          $ref: "#/components/schemas/ClientStatus"
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+      required: [id, name, phone, status, createdAt, updatedAt]
+
+    Property:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int32
+        title:
+          type: string
+        description:
+          type: string
+        status:
+          $ref: "#/components/schemas/PropertyStatus"
+        price:
+          type: number
+        address:
+          type: string
+        city:
+          type: string
+        type:
+          type: string
+        imageUrl:
+          type: string
+          nullable: true
+        userId:
+          type: integer
+          format: int32
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - title
+        - description
+        - status
+        - price
+        - address
+        - city
+        - type
+        - userId
+        - createdAt
+        - updatedAt
+
+    ClientShort:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int32
+        name:
+          type: string
+      required: [id, name]
+
+    PropertyShort:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int32
+        title:
+          type: string
+        city:
+          type: string
+        address:
+          type: string
+      required: [id, title, city, address]
+
+    Interest:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int32
+        status:
+          $ref: "#/components/schemas/InterestStatus"
+        note:
+          type: string
+          nullable: true
+        clientId:
+          type: integer
+          format: int32
+        propertyId:
+          type: integer
+          format: int32
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+      required: [id, status, clientId, propertyId, createdAt, updatedAt]
+
+    Activity:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int32
+        type:
+          $ref: "#/components/schemas/ActivityType"
+        description:
+          type: string
+        activityDate:
+          type: string
+          format: date-time
+        userId:
+          type: integer
+          format: int32
+        interestId:
+          type: integer
+          format: int32
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - type
+        - description
+        - activityDate
+        - userId
+        - interestId
+        - createdAt
+        - updatedAt
+
+    InterestWithRelations:
+      allOf:
+        - $ref: "#/components/schemas/Interest"
+        - type: object
+          properties:
+            client:
+              $ref: "#/components/schemas/ClientShort"
+            property:
+              $ref: "#/components/schemas/PropertyShort"
+            activities:
+              type: array
+              items:
+                $ref: "#/components/schemas/Activity"
+
+    ActivityWithRelations:
+      allOf:
+        - $ref: "#/components/schemas/Activity"
+        - type: object
+          properties:
+            user:
+              $ref: "#/components/schemas/SafeUser"
+            interest:
+              $ref: "#/components/schemas/InterestWithRelations"
+
+    Metrics:
+      type: object
+      properties:
+        usersCount:
+          type: integer
+        clientsCount:
+          type: integer
+        propertiesCount:
+          type: integer
+        interestsCount:
+          type: integer
+        activitiesCount:
+          type: integer
+      required:
+        - usersCount
+        - clientsCount
+        - propertiesCount
+        - interestsCount
+        - activitiesCount
+
+    MarketChatRequest:
+      type: object
+      properties:
+        message:
+          type: string
+          example: Give me a short overview of major real estate companies and market trends.
+      required: [message]
+
+    MarketChatResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        reply:
+          type: string
+          example: |
+            ## Major companies
+
+            - **CBRE Group**
+            - **JLL**
+            - **Zillow**
+
+            ### Trend
+            The market is showing *mixed movement* with stronger performance in selected urban areas.
+      required: [success, reply]
+
+paths:
+  /api/auth/register:
+    post:
+      tags: [Auth]
+      summary: Register user
+      description: Kreira novog korisnika i odmah postavlja auth cookie.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                email:
+                  type: string
+                  format: email
+                password:
+                  type: string
+                role:
+                  $ref: "#/components/schemas/Role"
+              required: [name, email, password, role]
+      responses:
+        "200":
+          description: Registration successful
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                  data:
+                    $ref: "#/components/schemas/SafeUser"
+                required: [success, message, data]
+        "400":
+          description: Validation failed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiFail"
+        "409":
+          description: Email already exists
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiFail"
+
+  /api/auth/login:
+    post:
+      tags: [Auth]
+      summary: Login user
+      description: Prijavljuje korisnika i postavlja HttpOnly cookie.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                email:
+                  type: string
+                  format: email
+                password:
+                  type: string
+              required: [email, password]
+      responses:
+        "200":
+          description: Login successful
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                  data:
+                    $ref: "#/components/schemas/SafeUser"
+                required: [success, message, data]
+        "400":
+          description: Missing credentials
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiFail"
+        "401":
+          description: Invalid credentials
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiFail"
+
+  /api/auth/logout:
+    post:
+      tags: [Auth]
+      summary: Logout user
+      security:
+        - cookieAuth: []
+      responses:
+        "200":
+          description: Logout successful
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiSuccessMessage"
+
+  /api/auth/me:
+    get:
+      tags: [Auth]
+      summary: Get current user
+      security:
+        - cookieAuth: []
+      responses:
+        "200":
+          description: Current user returned
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    $ref: "#/components/schemas/SafeUser"
+                required: [success, data]
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiFail"
+
+  /api/clients:
+    get:
+      tags: [Clients]
+      summary: List clients
+      security:
+        - cookieAuth: []
+      description: Dostupno rolama MANAGER i AGENT.
+      responses:
+        "200":
+          description: Clients list
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/Client"
+                required: [success, data]
+        "403":
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiFail"
+
+    post:
+      tags: [Clients]
+      summary: Create client
+      security:
+        - cookieAuth: []
+      description: Dostupno samo roli MANAGER.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                email:
+                  type: string
+                  format: email
+                  nullable: true
+                phone:
+                  type: string
+                status:
+                  $ref: "#/components/schemas/ClientStatus"
+              required: [name, phone]
+      responses:
+        "201":
+          description: Client created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                  data:
+                    $ref: "#/components/schemas/Client"
+                required: [success, message, data]
+        "400":
+          description: Validation failed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiFail"
+        "403":
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiFail"
+
+  /api/clients/{id}:
+    delete:
+      tags: [Clients]
+      summary: Delete client
+      security:
+        - cookieAuth: []
+      description: Dostupno samo roli MANAGER.
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Client deleted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiSuccessMessage"
+        "400":
+          description: Invalid client id
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiFail"
+        "404":
+          description: Client not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiFail"
+
+  /api/properties:
+    get:
+      tags: [Properties]
+      summary: List properties for current agent
+      security:
+        - cookieAuth: []
+      description: Dostupno samo roli AGENT.
+      responses:
+        "200":
+          description: Properties list
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/Property"
+                required: [success, data]
+        "403":
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiFail"
+
+    post:
+      tags: [Properties]
+      summary: Create property
+      security:
+        - cookieAuth: []
+      description: Dostupno samo roli AGENT.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                title:
+                  type: string
+                description:
+                  type: string
+                status:
+                  $ref: "#/components/schemas/PropertyStatus"
+                price:
+                  type: number
+                address:
+                  type: string
+                city:
+                  type: string
+                type:
+                  type: string
+                imageUrl:
+                  type: string
+                  nullable: true
+              required: [title, description, price, address, city, type]
+      responses:
+        "201":
+          description: Property created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  message:
+                    type: string
+                  data:
+                    $ref: "#/components/schemas/Property"
+                required: [success, message, data]
+        "400":
+          description: Validation failed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiFail"
+
+  /api/properties/{id}:
+    put:
+      tags: [Properties]
+      summary: Update property
+      security:
+        - cookieAuth: []
+      description: Dostupno samo roli AGENT. Agent može menjati samo svoje nekretnine.
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                title:
+                  type: string
+                description:
+                  type: string
+                status:
+                  $ref: "#/components/schemas/PropertyStatus"
+                price:
+                  type: number
+                address:
+                  type: string
+                city:
+                  type: string
+                type:
+                  type: string
+                imageUrl:
+                  type: string
+                  nullable: true
+      responses:
+        "200":
+          description: Property updated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  message:
+                    type: string
+                  data:
+                    $ref: "#/components/schemas/Property"
+                required: [success, message, data]
+        "400":
+          description: Invalid property id
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiFail"
+        "404":
+          description: Property not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiFail"
+
+    delete:
+      tags: [Properties]
+      summary: Delete property
+      security:
+        - cookieAuth: []
+      description: Dostupno samo roli AGENT. Agent može obrisati samo svoje nekretnine.
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Property deleted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiSuccessMessage"
+        "400":
+          description: Invalid property id
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiFail"
+        "404":
+          description: Property not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiFail"
+
+  /api/interests:
+    get:
+      tags: [Interests]
+      summary: List client interests
+      security:
+        - cookieAuth: []
+      description: Dostupno samo roli AGENT.
+      responses:
+        "200":
+          description: Interests list
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/InterestWithRelations"
+                required: [success, data]
+        "403":
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiFail"
+
+    post:
+      tags: [Interests]
+      summary: Create interest
+      security:
+        - cookieAuth: []
+      description: Dostupno samo roli AGENT.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                clientId:
+                  type: integer
+                propertyId:
+                  type: integer
+                status:
+                  $ref: "#/components/schemas/InterestStatus"
+                note:
+                  type: string
+                  nullable: true
+              required: [clientId, propertyId]
+      responses:
+        "201":
+          description: Interest created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  message:
+                    type: string
+                  data:
+                    $ref: "#/components/schemas/InterestWithRelations"
+                required: [success, message, data]
+        "404":
+          description: Client or property not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiFail"
+        "409":
+          description: Interest already exists
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiFail"
+
+  /api/interests/{id}:
+    put:
+      tags: [Interests]
+      summary: Update interest
+      security:
+        - cookieAuth: []
+      description: Dostupno samo roli AGENT.
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                status:
+                  $ref: "#/components/schemas/InterestStatus"
+                note:
+                  type: string
+                  nullable: true
+      responses:
+        "200":
+          description: Interest updated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  message:
+                    type: string
+                  data:
+                    $ref: "#/components/schemas/InterestWithRelations"
+                required: [success, message, data]
+        "400":
+          description: Invalid interest id
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiFail"
+        "404":
+          description: Interest not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiFail"
+
+  /api/activities:
+    get:
+      tags: [Activities]
+      summary: List activities for current agent
+      security:
+        - cookieAuth: []
+      description: Dostupno samo roli AGENT.
+      responses:
+        "200":
+          description: Activities list
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/ActivityWithRelations"
+                required: [success, data]
+        "403":
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiFail"
+
+    post:
+      tags: [Activities]
+      summary: Create activity
+      security:
+        - cookieAuth: []
+      description: Dostupno samo roli AGENT.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                type:
+                  $ref: "#/components/schemas/ActivityType"
+                description:
+                  type: string
+                activityDate:
+                  type: string
+                  format: date-time
+                interestId:
+                  type: integer
+              required: [type, description, activityDate, interestId]
+      responses:
+        "201":
+          description: Activity created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  message:
+                    type: string
+                  data:
+                    $ref: "#/components/schemas/ActivityWithRelations"
+                required: [success, message, data]
+        "400":
+          description: Validation failed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiFail"
+        "403":
+          description: Forbidden for another agent property
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiFail"
+        "404":
+          description: Interest not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiFail"
+
+  /api/metrics:
+    get:
+      tags: [Metrics]
+      summary: Admin system metrics
+      security:
+        - cookieAuth: []
+      description: Dostupno samo roli ADMIN.
+      responses:
+        "200":
+          description: Metrics returned
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    $ref: "#/components/schemas/Metrics"
+                required: [success, data]
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiFail"
+        "403":
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiFail"
+        "500":
+          description: Database or server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiFail"
+
+  /api/market-chat:
+    post:
+      tags: [Market Chat]
+      summary: Ask market assistant
+      description: >
+        Chat endpoint koji koristi GitHub Models i vraća odgovor o
+        kompanijama, deonicama i trendovima u real estate industriji.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/MarketChatRequest"
+      responses:
+        "200":
+          description: Chat reply returned
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MarketChatResponse"
+        "400":
+          description: Missing message
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiFail"
+        "500":
+          description: AI service or server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiFail"
