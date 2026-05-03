@@ -56,7 +56,7 @@ export default function Footer() {
                 fontSize: "13px",
               }}
             >
-              Simple real estate CRM application.
+              Real estate CRM application.
             </p>
           </div>
         </div>
