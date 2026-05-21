@@ -12,11 +12,8 @@ U okviru sistema korisnici mogu da se registruju, prijave i odjave, da rade sa p
 
 ![CRM Properties Promo](./readme-promo-images/promo.gif)
 
-### Promo poster 1.
-![Promo 1](./readme-promo-images/promo1.png)
-
-### Promo poster 2.
-![Promo 2](./readme-promo-images/promo2.png)
+### Promo poster.
+![Promo](./readme-promo-images/promo.png)
 
 ## Osnovna ideja projekta.
 
