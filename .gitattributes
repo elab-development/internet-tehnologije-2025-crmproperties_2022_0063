@@ -1,0 +1,4 @@
+# Shell skripte moraju uvek imati LF prelome redova.
+# Na Windowsu Git podrazumevano prepravlja LF u CRLF, pa Linux kontejner
+# ne prepoznaje "#!/bin/sh" i puca sa greškom "set: illegal option -".
+*.sh text eol=lf
